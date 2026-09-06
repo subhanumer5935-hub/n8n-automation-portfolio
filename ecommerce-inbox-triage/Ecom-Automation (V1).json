@@ -1,0 +1,295 @@
+{
+  "name": "Ecom-Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -512,
+        -16
+      ],
+      "id": "1cbef29d-bebb-4015-9f36-1e40d33c0a55",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "W4lpINArhCow0HE3",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a customer support triage assistant for a small e-commerce store.\n\nRead the customer's email and classify it. Return ONLY valid JSON, no other text, in this exact format:\n{\n  \"category\": \"order_status | refund_complaint | product_question\",\n  \"urgency\": \"low | medium | high\",\n  \"summary\": \"One sentence summarizing what the customer wants\",\n  \"suggested_reply\": \"A short, friendly draft reply appropriate to the category\"\n}\n\nCategory definitions:\norder_status = asking where their order is, tracking, delivery timing\nrefund_complaint = wants a refund, return, item arrived damaged/wrong, angry or dissatisfied\nproduct_question = asking about a product before or after buying, sizing, compatibility, how something works\n\nCustomer email: {{ $json.snippet }}",
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -368,
+        -16
+      ],
+      "id": "7399c7e0-c67d-440e-8270-0c6b02b4f6b7",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.6-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -304,
+        144
+      ],
+      "id": "3bc2ee9b-a4d2-42a6-8e33-5ab7d537f4f2",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "PEJNPRcf1lSgWsJ8",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ JSON.parse($json.text).category }}",
+                    "rightValue": "order_status",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "60131f51-fabf-4200-b293-e55773c0d4f9"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -80,
+        -16
+      ],
+      "id": "f5dac867-4b0f-4442-ac4d-ce0aa7d7b85e",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Gmail Trigger').item.json.From }}",
+        "subject": "Re: Your order inquiry",
+        "message": "={{ JSON.parse($('Basic LLM Chain').item.json.text).suggested_reply }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        112,
+        -96
+      ],
+      "id": "37fc8282-b1f0-4582-920e-71fc31271cbf",
+      "name": "Send a message",
+      "webhookId": "1f5cf8e5-8d48-4947-9a16-d9ea3293900b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "W4lpINArhCow0HE3",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1AwqVa0LXbm_fzEIVhWPwPgc-3puOBfQseHr_Fb4oQgs",
+          "mode": "list",
+          "cachedResultName": "Support Tickets",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1AwqVa0LXbm_fzEIVhWPwPgc-3puOBfQseHr_Fb4oQgs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1AwqVa0LXbm_fzEIVhWPwPgc-3puOBfQseHr_Fb4oQgs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "From": "={{ $('Gmail Trigger').item.json.From }}",
+            "Timestamp": "={{ $now }}",
+            "Category": "={{ JSON.parse($('Basic LLM Chain').item.json.text).category }}",
+            "Urgency": "={{ JSON.parse($('Basic LLM Chain').item.json.text).urgency }}",
+            "Summary": "={{ JSON.parse($('Basic LLM Chain').item.json.text).summary }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "From",
+              "displayName": "From",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Urgency",
+              "displayName": "Urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        112,
+        80
+      ],
+      "id": "df51d102-ecf0-4417-b655-27433e85ed52",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "QGZJtP9yMmYnoQDS",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ce9cf853-1e4a-42ee-bae8-150752872964",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bf9b932911661655a08b507cdf3c52e258035cba08e893c1dc2881cfa3c6c343"
+  },
+  "nodeGroups": [],
+  "id": "89rMVcDRTo0E7ojc",
+  "tags": []
+}
