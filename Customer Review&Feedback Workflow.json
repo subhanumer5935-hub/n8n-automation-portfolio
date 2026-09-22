@@ -1,0 +1,310 @@
+{
+  "name": "Customer Review&Feedback Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "13ac1434-182e-45a2-924f-719ff6532d17",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1AwqVa0LXbm_fzEIVhWPwPgc-3puOBfQseHr_Fb4oQgs",
+          "mode": "list",
+          "cachedResultName": "Support Tickets",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1AwqVa0LXbm_fzEIVhWPwPgc-3puOBfQseHr_Fb4oQgs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1901644591,
+          "mode": "list",
+          "cachedResultName": "Orders Info(Dummy)V1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1AwqVa0LXbm_fzEIVhWPwPgc-3puOBfQseHr_Fb4oQgs/edit#gid=1901644591"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "a9387609-7b6a-41e5-b610-b877bbcf9ced",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "QGZJtP9yMmYnoQDS",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e1caf202-2963-4848-a222-d9f2a35591c6",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "delivered",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "f599a722-d2c1-405c-89f9-44182b5b7964",
+              "leftValue": "={{ $json['Review Requested'] }}",
+              "rightValue": "No",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "a6405215-7fb2-4d71-b408-d8314747fb68",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.customer_email }}",
+        "subject": "=We'd love your feedback, {{ $json.customer_email }}",
+        "message": "=Hi{{ $json['  customer_name'] }},<br><br>  Thanks for your recent order (#{{ $json['   order_id'] }}) from Al-Noor! We hope you're loving it.<br><br>  We'd really appreciate it if you could take 30 seconds to leave us a quick review — it helps us a lot and helps other customers know what to expect.<br><br>  👉 <a href=\"YOUR_REVIEW_LINK_HERE\">Leave a review here</a><br><br>  Thanks again for shopping with us!<br> — Al-Noor Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "75ea2dce-ae1e-487c-9af1-ca2d3e466a99",
+      "name": "Send a message",
+      "webhookId": "424cc2aa-eb7b-479b-8b52-a4dddccbdebe",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "W4lpINArhCow0HE3",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1AwqVa0LXbm_fzEIVhWPwPgc-3puOBfQseHr_Fb4oQgs",
+          "mode": "list",
+          "cachedResultName": "Support Tickets",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1AwqVa0LXbm_fzEIVhWPwPgc-3puOBfQseHr_Fb4oQgs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1901644591,
+          "mode": "list",
+          "cachedResultName": "Orders Info(Dummy)V1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1AwqVa0LXbm_fzEIVhWPwPgc-3puOBfQseHr_Fb4oQgs/edit#gid=1901644591"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "   order_id": "={{ $('Get row(s) in sheet').item.json['   order_id'] }}",
+            "Review Requested": "Yes"
+          },
+          "matchingColumns": [
+            "   order_id"
+          ],
+          "schema": [
+            {
+              "id": "   order_id",
+              "displayName": "   order_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "  customer_name",
+              "displayName": "  customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "   tracking_link",
+              "displayName": "   tracking_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "   expected_delivery",
+              "displayName": "   expected_delivery",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Review Requested",
+              "displayName": "Review Requested",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "customer_email",
+              "displayName": "customer_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        832,
+        0
+      ],
+      "id": "c3d4e292-15bb-4488-95d3-42d22dbd4715",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "QGZJtP9yMmYnoQDS",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "d881bc74-de8f-4415-8e10-0e7374c01f6e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bf9b932911661655a08b507cdf3c52e258035cba08e893c1dc2881cfa3c6c343"
+  },
+  "nodeGroups": [],
+  "id": "sUBJ44S4DNZBXSRD",
+  "tags": []
+}
